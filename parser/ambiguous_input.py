@@ -3,7 +3,7 @@ This is an x-best runner, apparently. Do not share.
 """
 
 import sys
-from conllz import read_conllz
+from conllz import read_conllz, read_conllz_for_joint
 from sdp import read_sentences, load_model, s2conll, c2s, joint_parse # parse, parse_with_feats
 
 from metrics import las
@@ -34,16 +34,22 @@ def run_experiment(gold_path, corpus_path, model, vector, output_path):
         output.write('# Gold parse:\n' + s2conll(gold[1:]))  # write the gold sentence
 
         scored_sentences = []
+	top_sentence = '';
+	max_score = 0.0;
         # work with alternatives generated from one gold sentence
         current_sentence = next(ambiguous_sentences)
         while current_sentence is not None:
-#def joint_parse(s, parsing_guide, parsing_feats, tagging_guide, tagging_feats):
             #parsed = c2s(parse_with_feats(current_sentence, guide, feats))  # parse the sentence
             parsed = c2s(joint_parse(current_sentence, guide, feats, '', ''))  # parse the sentence
             score = las(parsed, gold[1:])
-            scored_sentences.append((score, parsed))
+            if score > max_score: #{
+                max_score = score;
+                top_sentence = (score, parsed);
+            #}
+            #scored_sentences.append((score, parsed))
             current_sentence = next(ambiguous_sentences)
 
+        scored_sentences.append(top_sentence);
         # write sentences in descending order of score
         for s in sorted(scored_sentences, key=lambda x: x[0], reverse=True):
             output.write('\n# LAS: ' + str(s[0]) + '\n' + s2conll(s[1]))
