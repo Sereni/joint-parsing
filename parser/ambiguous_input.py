@@ -29,16 +29,19 @@ def run_experiment(gold_path, corpus_path, model, vector, output_path):
     for gold in gold_sentences:
 
         if counter % 1 == 0:
+            sys.stderr.write('\n');
             print('Parsing sentence %d' % counter)
 
         output.write('# Gold parse:\n' + s2conll(gold[1:]))  # write the gold sentence
 
         scored_sentences = []
-	top_sentence = '';
-	max_score = 0.0;
+        top_sentence = '';
+        max_score = 0.0;
+        scount = 0;
         # work with alternatives generated from one gold sentence
         current_sentence = next(ambiguous_sentences)
         while current_sentence is not None:
+            scount = scount + 1;
             #parsed = c2s(parse_with_feats(current_sentence, guide, feats))  # parse the sentence
             parsed = c2s(joint_parse(current_sentence, guide, feats, '', ''))  # parse the sentence
             score = las(parsed, gold[1:])
@@ -47,6 +50,10 @@ def run_experiment(gold_path, corpus_path, model, vector, output_path):
                 top_sentence = (score, parsed);
             #}
             #scored_sentences.append((score, parsed))
+            if scount % 500 == 0: #{
+                sys.stderr.write('.');
+                sys.stderr.flush();
+            #}
             current_sentence = next(ambiguous_sentences)
 
         scored_sentences.append(top_sentence);
@@ -55,6 +62,7 @@ def run_experiment(gold_path, corpus_path, model, vector, output_path):
             output.write('\n# LAS: ' + str(s[0]) + '\n' + s2conll(s[1]))
 
         output.write('\n')
+        output.flush();
         counter += 1
 
     output.close()
